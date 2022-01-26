@@ -12,6 +12,7 @@ static const int systraypinningfailfirst = 1;   /* 1: if pinning fails, display 
 static const int showsystray        = 1;     /* 0 means no systray */
 static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 0;        /* 0 means bottom bar */
+static const int viewontag	    = 1;      /* switch view on tag switch*/
 static const char *fonts[]          = { "SauceCodePro Nerd Font:size=16", "Noto Serif CJK SC:size=16" };
 static const char dmenufont[]       = "SauceCodePro Nerd Font:size=16";
 
@@ -122,16 +123,16 @@ static Key keys[] = {
 	{ MODKEY,                       XK_Return, spawn,          {.v = termcmd  } },
 	{ MODKEY,                       XK_p,      spawn,          {.v = browercmd } },
 	{ MODKEY,                       XK_g,      spawn,          {.v = googlecmd } },
-	{ MODKEY, 						XK_c, 	   spawn, 		   {.v = vscodecmd } },
-    { MODKEY|ShiftMask, 			XK_s, 	   spawn, 		   SHCMD("flameshot gui")},
+	{ MODKEY, 			XK_c, 	   spawn,	   {.v = vscodecmd } },
+        { MODKEY|ShiftMask, 		XK_s, 	   spawn, 	   SHCMD("flameshot gui")},
 	{ MODKEY,                       XK_grave,  togglescratch,  {.v = scratchpadcmd } },
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
 	{ MODKEY|ShiftMask,             XK_j,      rotatestack,    {.i = +1 } },
 	{ MODKEY|ShiftMask,             XK_k,      rotatestack,    {.i = -1 } },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
-	{ MODKEY|ShiftMask,             XK_h,      incnmaster,     {.i = +1 } },
-	{ MODKEY|ShiftMask,             XK_l,      incnmaster,     {.i = -1 } },
+	{ MODKEY|ControlMask,           XK_h,      incnmaster,     {.i = +1 } },
+	{ MODKEY|ControlMask,           XK_l,      incnmaster,     {.i = -1 } },
 	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
 	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
 	{ MODKEY,                       XK_Tab,    view,           {0} },

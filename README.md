@@ -20,6 +20,7 @@
     - uselessgap: 在每个window之间增加空隙，提升视觉效果
     - scratchpad: 一个小的终端窗口
     - fullscreen: 使window全屏
+    - viewontag: 当把选中窗口移动到别的标签去的时候，视角也会跟着移动。
 
 自启动脚本以及补丁alphasystray来自于theniceboy。并对其进行较多修改以符合自己的体验。
 所有使用的补丁放置于patches文件夹内，如有需要，请自行取用。
