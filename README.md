@@ -1,4 +1,4 @@
-**refer to github{@theniceboy, @WindyValley}**
+
 
 ---
 预览效果如下:
@@ -24,6 +24,13 @@
 
 自启动脚本以及补丁alphasystray来自于theniceboy。并对其进行较多修改以符合自己的体验。
 所有使用的补丁放置于patches文件夹内，如有需要，请自行取用。
+
+---
+
+**acknowledgement and reference:**
+
+@theniceboy, @WindyValley
+
 
 ============================
 
