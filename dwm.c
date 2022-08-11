@@ -138,24 +138,24 @@ typedef struct {
 
 typedef struct Pertag Pertag;
 struct Monitor {
-	char ltsymbol[16];
-	float mfact;
-	int nmaster;
+	char ltsymbol[16];    // 布局名称
+	float mfact;          /* factor of master area size [0.05..0.95] */
+	int nmaster;          /* number of clients in master area */
 	int num;
 	int by;               /* bar geometry */
 	int bt;               /* number of tasks */
 	int mx, my, mw, mh;   /* screen size */
 	int wx, wy, ww, wh;   /* window area  */
-	unsigned int seltags;
-	unsigned int sellt;
-	unsigned int tagset[2];
+	unsigned int seltags; // 当前选择的tag
+	unsigned int sellt;   // 当前选择的layout
+	unsigned int tagset[2]; // 标签集
 	int showbar;
 	int topbar;
 	Client *clients;
-	Client *sel;
+	Client *sel;       // 但前选择的client
 	Client *stack;
 	Monitor *next;
-	Window barwin;
+	Window barwin;     // bar所属的窗口
 	const Layout *lt[2];
 	Pertag *pertag;
 };
@@ -269,6 +269,7 @@ static void restack(Monitor *m);
 
 static void run(void);
 static void runAutostart(void);
+static void runautostart(void);
 static void scan(void);
 static int sendevent(Window w, Atom proto, int m, long d0, long d1, long d2, long d3, long d4);
 static void sendmon(Client *c, Monitor *m);
@@ -291,6 +292,7 @@ static void togglebar(const Arg *arg);
 static void togglesystray();
 static void togglefloating(const Arg *arg);
 static void toggleallfloating(const Arg *arg);
+static void togglescratch(const Arg *arg);
 
 static void unfocus(Client *c, int setfocus);
 static void unmanage(Client *c, int destroyed);
@@ -329,7 +331,11 @@ static void zoom(const Arg *arg);
 
 /* variables */
 static Systray *systray =  NULL;
+static const char autostartblocksh[] = "autostart_blocking.sh";
+static const char autostartsh[] = "autostart.sh";
 static const char broken[] = "broken";
+static const char dwmdir[] = "dwm";
+static const char localshare[] = ".local/share";
 static char stext[1024];
 static int screen;
 static int sw, sh;           /* X display screen geometry width, height */
@@ -619,11 +625,13 @@ buttonpress(XEvent *e)
 void
 checkotherwm(void)
 {
+    // 注册处理出错的error处理函数
     xerrorxlib = XSetErrorHandler(xerrorstart);
     /* this causes an error if some other window manager is running */
+    // 若此时有另一个wm在运行，XSelectInput会抛出错误，执行错误处理函数xerrorlib, 如无错误，则继续往下执行
     XSelectInput(dpy, DefaultRootWindow(dpy), SubstructureRedirectMask);
     XSync(dpy, False);
-    XSetErrorHandler(xerror);
+    XSetErrorHandler(xerror); // 重新注册新的错误处理函数
     XSync(dpy, False);
 }
 
@@ -2057,6 +2065,83 @@ runAutostart(void) {
 }
 
 void
+runautostart(void)
+{
+	char *pathpfx;
+	char *path;
+	char *xdgdatahome;
+	char *home;
+	struct stat sb;
+
+	if ((home = getenv("HOME")) == NULL)
+		/* this is almost impossible */
+		return;
+
+	/* if $XDG_DATA_HOME is set and not empty, use $XDG_DATA_HOME/dwm,
+	 * otherwise use ~/.local/share/dwm as autostart script directory
+	 */
+	xdgdatahome = getenv("XDG_DATA_HOME");
+	if (xdgdatahome != NULL && *xdgdatahome != '\0') {
+		/* space for path segments, separators and nul */
+		pathpfx = ecalloc(1, strlen(xdgdatahome) + strlen(dwmdir) + 2);
+
+		if (sprintf(pathpfx, "%s/%s", xdgdatahome, dwmdir) <= 0) {
+			free(pathpfx);
+			return;
+		}
+	} else {
+		/* space for path segments, separators and nul */
+		pathpfx = ecalloc(1, strlen(home) + strlen(localshare)
+		                     + strlen(dwmdir) + 3);
+
+		if (sprintf(pathpfx, "%s/%s/%s", home, localshare, dwmdir) < 0) {
+			free(pathpfx);
+			return;
+		}
+	}
+
+	/* check if the autostart script directory exists */
+	if (! (stat(pathpfx, &sb) == 0 && S_ISDIR(sb.st_mode))) {
+		/* the XDG conformant path does not exist or is no directory
+		 * so we try ~/.dwm instead
+		 */
+		char *pathpfx_new = realloc(pathpfx, strlen(home) + strlen(dwmdir) + 3);
+		if(pathpfx_new == NULL) {
+			free(pathpfx);
+			return;
+		}
+   pathpfx = pathpfx_new;
+
+		if (sprintf(pathpfx, "%s/.%s", home, dwmdir) <= 0) {
+			free(pathpfx);
+			return;
+		}
+	}
+
+	/* try the blocking script first */
+	path = ecalloc(1, strlen(pathpfx) + strlen(autostartblocksh) + 2);
+	if (sprintf(path, "%s/%s", pathpfx, autostartblocksh) <= 0) {
+		free(path);
+		free(pathpfx);
+	}
+
+	if (access(path, X_OK) == 0)
+		system(path);
+
+	/* now the non-blocking script */
+	if (sprintf(path, "%s/%s", pathpfx, autostartsh) <= 0) {
+		free(path);
+		free(pathpfx);
+	}
+
+	if (access(path, X_OK) == 0)
+		system(strcat(path, " &"));
+
+	free(pathpfx);
+	free(path);
+}
+
+void
 scan(void)
 {
     unsigned int i, num;
@@ -2261,7 +2346,7 @@ setup(void)
     sh = DisplayHeight(dpy, screen);
     root = RootWindow(dpy, screen);
     xinitvisual();
-    drw = drw_create(dpy, screen, root, sw, sh, visual, depth, cmap);
+    drw = drw_create(dpy, screen, root, sw, sh, visual, depth, cmap); // drw类似可绘制视窗的管理结构体，包含多个与窗口相关参数
     if (!drw_fontset_create(drw, fonts, LENGTH(fonts)))
         die("no fonts could be loaded.");
     lrpad = drw->fonts->h;
@@ -2822,7 +2907,7 @@ updatestatus(void)
 {
     Monitor *m;
     if (!gettextprop(root, XA_WM_NAME, stext, sizeof(stext)))
-        strcpy(stext, ":) ");
+        strcpy(stext, ">>.<<");
     for (m = mons; m; m = m->next)
         drawbar(m);
     updatesystray();
@@ -3359,14 +3444,14 @@ main(int argc, char *argv[])
         fputs("warning: no locale support\n", stderr);
     if (!(dpy = XOpenDisplay(NULL)))
         die("dwm: cannot open display");
-    checkotherwm();
-    setup();
+    checkotherwm(); // 检查是否有其他wm
+    setup(); // 初始化
 #ifdef __OpenBSD__
     if (pledge("stdio rpath proc exec", NULL) == -1)
         die("pledge");
 #endif /* __OpenBSD__ */
     scan();
-    runAutostart();
+    runautostart();
     run();
     cleanup();
     XCloseDisplay(dpy);

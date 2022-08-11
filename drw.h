@@ -5,28 +5,28 @@ typedef struct {
 } Cur;
 
 typedef struct Fnt {
-	Display *dpy;
-	unsigned int h;
-	XftFont *xfont;
-	FcPattern *pattern;
-	struct Fnt *next;
+	Display *dpy;  			// 设备显示器(物理)
+	unsigned int h;  		// 字号大小(字体高度)
+	XftFont *xfont;  		// 指向X库中xftFont结构体，是字体实现的核心 
+	FcPattern *pattern;		// 模式
+	struct Fnt *next;		// 指向下一个字体
 } Fnt;
 
 enum { ColFg, ColBg, ColBorder }; /* Clr scheme index */
 typedef XftColor Clr;
 
 typedef struct {
-	unsigned int w, h;
-	Display *dpy;
-	int screen;
-	Window root;
+	unsigned int w, h;		// 宽， 高 
+	Display *dpy;			// 所属显示器
+	int screen;				// 屏幕号
+	Window root;			// 根视窗
 	Visual *visual;
 	unsigned int depth;
 	Colormap cmap;
 	Drawable drawable;
 	GC gc;
-	Clr *scheme;
-	Fnt *fonts;
+	Clr *scheme;			// 配色
+	Fnt *fonts;				// 字体
 } Drw;
 
 /* Drawable abstraction */
